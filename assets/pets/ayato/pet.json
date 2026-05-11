@@ -1,0 +1,65 @@
+{
+  "id": "ayato",
+  "displayName": "逆卷绫人",
+  "description": "拥有吸血鬼气质的Q版桌宠角色",
+  "spritesheetPath": "spritesheet.webp",
+  "frameWidth": 192,
+  "columns": 8,
+  "rows": 8,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 6,
+      "fps": 6,
+      "frameHeight": 212
+    },
+    "dragRight": {
+      "row": 1,
+      "frames": 8,
+      "fps": 8,
+      "frameHeight": 204
+    },
+    "dragLeft": {
+      "row": 2,
+      "frames": 8,
+      "fps": 8,
+      "frameHeight": 209
+    },
+    "idle2": {
+      "row": 3,
+      "frames": 4,
+      "fps": 6,
+      "frameHeight": 212
+    },
+    "idle3": {
+      "row": 4,
+      "frames": 5,
+      "fps": 6,
+      "frameHeight": 207
+    },
+    "idle4": {
+      "row": 5,
+      "frames": 8,
+      "fps": 6,
+      "frameHeight": 206
+    },
+    "idle5": {
+      "row": 6,
+      "frames": 6,
+      "fps": 6,
+      "frameHeight": 209
+    },
+    "idle6": {
+      "row": 7,
+      "frames": 6,
+      "fps": 6,
+      "frameHeight": 207
+    },
+    "idle7": {
+      "row": 8,
+      "frames": 6,
+      "fps": 6,
+      "frameHeight": 206
+    }
+  }
+}
