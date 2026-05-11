@@ -37,6 +37,12 @@ class OverlayService : Service() {
     private var frameWidth = 192
     private var columns = 8
     private var displayScale = 1.0f
+    private var maxFrameHeight = 200
+    private var frameBuffer: Bitmap? = null
+    private var frameCanvas: Canvas? = null
+    private val srcRect = Rect()
+    private val dstRect = Rect()
+    private var currentDragDirection = 0
 
     private var layoutParams: WindowManager.LayoutParams? = null
 
@@ -84,6 +90,7 @@ class OverlayService : Service() {
 
     private fun parseAnimations(json: String) {
         val idles = mutableListOf<AnimDef>()
+        var parsedMaxFrameHeight = 200
         try {
             val obj = JSONObject(json)
 
@@ -103,6 +110,9 @@ class OverlayService : Service() {
             }
 
             rawList.sortBy { it.row }
+            if (rawList.isNotEmpty()) {
+                parsedMaxFrameHeight = rawList.maxOf { it.frameHeight }
+            }
 
             val yOffsets = mutableMapOf<Int, Int>()
             var cumulativeY = 0
@@ -132,22 +142,13 @@ class OverlayService : Service() {
         if (idleAnims.isEmpty()) {
             idleAnims = listOf(AnimDef(0, 6, 6, 200, 0))
         }
+        maxFrameHeight = parsedMaxFrameHeight.coerceAtLeast(1)
     }
 
     private fun switchToAnim(anim: AnimDef) {
         if (currentAnim == anim) return
         currentAnim = anim
         currentFrame = 0
-        updateOverlaySize(anim)
-    }
-
-    private fun updateOverlaySize(anim: AnimDef) {
-        val lp = layoutParams ?: return
-        val wm = windowManager ?: return
-        val v = overlayView ?: return
-        lp.width = (frameWidth * displayScale).toInt()
-        lp.height = (anim.frameHeight * displayScale).toInt()
-        try { wm.updateViewLayout(v, lp) } catch (_: Exception) {}
     }
 
     private fun pickRandomIdle() {
@@ -174,9 +175,8 @@ class OverlayService : Service() {
     private fun showOverlay(bitmap: Bitmap) {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        val firstAnim = idleAnims.firstOrNull() ?: AnimDef(0, 6, 6, 200, 0)
         val displayW = (frameWidth * displayScale).toInt()
-        val displayH = (firstAnim.frameHeight * displayScale).toInt()
+        val displayH = (maxFrameHeight * displayScale).toInt()
 
         val imageView = ImageView(this).apply {
             scaleType = ImageView.ScaleType.FIT_XY
@@ -213,10 +213,17 @@ class OverlayService : Service() {
     }
 
     private fun startAnimation(imageView: ImageView, bitmap: Bitmap) {
+        frameBuffer?.recycle()
+        frameBuffer = Bitmap.createBitmap(frameWidth, maxFrameHeight, Bitmap.Config.ARGB_8888)
+        val buffer = frameBuffer ?: return
+        frameCanvas = Canvas(buffer)
+        imageView.setImageBitmap(buffer)
+
         animHandler = Handler(Looper.getMainLooper())
         animRunnable = object : Runnable {
             override fun run() {
                 val anim = currentAnim ?: return
+                val canvas = frameCanvas ?: return
                 val col = currentFrame % anim.frames
                 val srcX = col * frameWidth
                 val srcY = anim.yOffset
@@ -225,10 +232,13 @@ class OverlayService : Service() {
                 val safeW = minOf(frameWidth, bitmap.width - srcX)
                 val safeH = minOf(cropH, bitmap.height - srcY)
 
+                canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR)
                 if (safeW > 0 && safeH > 0) {
-                    val frameBmp = Bitmap.createBitmap(bitmap, srcX, srcY, safeW, safeH)
-                    imageView.setImageBitmap(frameBmp)
+                    srcRect.set(srcX, srcY, srcX + safeW, srcY + safeH)
+                    dstRect.set(0, 0, safeW, safeH)
+                    canvas.drawBitmap(bitmap, srcRect, dstRect, null)
                 }
+                imageView.invalidate()
 
                 currentFrame = (currentFrame + 1) % anim.frames
                 animHandler?.postDelayed(this, (1000 / anim.fps).toLong())
@@ -251,6 +261,7 @@ class OverlayService : Service() {
                     initialTouchX = event.rawX
                     initialTouchY = event.rawY
                     isDragging = true
+                    currentDragDirection = 0
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -259,15 +270,23 @@ class OverlayService : Service() {
                     params.y = initialY + (event.rawY - initialTouchY).toInt()
                     windowManager?.updateViewLayout(view, params)
 
-                    if (dx < -5 && dragLeftAnim != null) {
-                        switchToAnim(dragLeftAnim!!)
-                    } else if (dx > 5 && dragRightAnim != null) {
-                        switchToAnim(dragRightAnim!!)
+                    val nextDragDirection = when {
+                        dx < -12 -> -1
+                        dx > 12 -> 1
+                        else -> 0
+                    }
+                    if (nextDragDirection != currentDragDirection) {
+                        when (nextDragDirection) {
+                            -1 -> dragLeftAnim?.let { switchToAnim(it) }
+                            1 -> dragRightAnim?.let { switchToAnim(it) }
+                        }
+                        currentDragDirection = nextDragDirection
                     }
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     isDragging = false
+                    currentDragDirection = 0
                     pickRandomIdle()
                     true
                 }
@@ -334,6 +353,9 @@ class OverlayService : Service() {
         animRunnable?.let { animHandler?.removeCallbacks(it) }
         stopIdleTimer()
         overlayView?.let { windowManager?.removeView(it) }
+        frameBuffer?.recycle()
+        frameBuffer = null
+        frameCanvas = null
         spritesheet?.recycle()
         spritesheet = null
     }
