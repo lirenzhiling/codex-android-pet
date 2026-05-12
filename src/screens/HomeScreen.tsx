@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,8 @@ import {
   NativeModules,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
-import {useFocusEffect} from '@react-navigation/native';
-import {PetWithConfig} from '../types';
+import { useFocusEffect } from '@react-navigation/native';
+import { PetWithConfig } from '../types';
 import {
   getAllPets,
   getPetWithConfig,
@@ -23,9 +23,9 @@ import {
 } from '../services/PetStorage';
 import SpriteAnimation from '../components/SpriteAnimation';
 
-const {OverlayModule} = NativeModules;
+const { OverlayModule } = NativeModules;
 
-export default function HomeScreen({navigation}: any) {
+export default function HomeScreen({ navigation }: any) {
   const [pets, setPets] = useState<PetWithConfig[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overlayActive, setOverlayActive] = useState(false);
@@ -55,7 +55,7 @@ export default function HomeScreen({navigation}: any) {
 
   const handleDelete = (pet: PetWithConfig) => {
     Alert.alert('删除宠物', `确定要删除 "${pet.name}" 吗？`, [
-      {text: '取消', style: 'cancel'},
+      { text: '取消', style: 'cancel' },
       {
         text: '删除',
         style: 'destructive',
@@ -102,7 +102,7 @@ export default function HomeScreen({navigation}: any) {
     }
   };
 
-  const renderPet = ({item}: {item: PetWithConfig}) => {
+  const renderPet = ({ item }: { item: PetWithConfig }) => {
     const isSelected = item.id === selectedId;
     return (
       <TouchableOpacity
@@ -114,7 +114,7 @@ export default function HomeScreen({navigation}: any) {
             spritesheetUri={item.spritesheetUri}
             frameWidth={item.config.frameWidth}
             columns={item.config.columns}
-            animation={item.config.animations.idle || {row: 0, frames: 6, fps: 6}}
+            animation={item.config.animations.idle || { row: 0, frames: 6, fps: 6 }}
             allAnimations={item.config.animations}
             scale={0.6}
           />
@@ -195,7 +195,7 @@ export default function HomeScreen({navigation}: any) {
           style={styles.renameButton}
           onPress={() => {
             const pet = pets.find(p => p.id === selectedId);
-            if (pet) navigation.navigate('RenamePet', {petId: pet.id, currentName: pet.name});
+            if (pet) navigation.navigate('RenamePet', { petId: pet.id, currentName: pet.name });
           }}>
           <Text style={styles.renameButtonText}>重命名</Text>
         </TouchableOpacity>
@@ -208,6 +208,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1a1a2e',
+    paddingTop: StatusBar.currentHeight ?? 0,
   },
   header: {
     paddingHorizontal: 20,
@@ -339,7 +340,7 @@ const styles = StyleSheet.create({
   renameButton: {
     position: 'absolute',
     right: 16,
-    top: 20,
+    top: (StatusBar.currentHeight ?? 0) + 20,
     backgroundColor: '#0f3460',
     paddingHorizontal: 16,
     paddingVertical: 8,

@@ -1,6 +1,10 @@
 # Codex Android 桌宠
 
+[English](README.en.md)
+
 一个可在 **Android** 平台运行的 Codex 桌宠应用，支持悬浮窗显示、大小调节，以及导入 Codex 生成的 `webp` 精灵图。
+
+![faa90317698587ed01c9838c4817eace](./assets/faa90317698587ed01c9838c4817eace.jpg)
 
 ## 功能特性
 
@@ -44,6 +48,8 @@ npm run android
 3. 选择 Codex 生成的 `spritesheet.webp`
 4. 输入桌宠名称并确认添加
 5. 返回首页后可选择并开启悬浮窗显示
+
+
 
 ## 项目结构
 
